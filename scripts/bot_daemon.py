@@ -1,17 +1,17 @@
-#!/usr/bin/env python3
+#!/bin/env python3
 import socket
 import threading
-from time import gmtime, strftime
 import pickle
 import telegram
-#import telegram.ext
-#import telegram.error
-import logging
+# ToDO: add loging
+# import telegram.error
+# import logging
 import sys
 import configparser
 from io import BytesIO
  
- 
+
+#parse section of ini config  
 def ConfigSectionMap(section):
     dict1 = {}
     options = config.options(section)
@@ -25,7 +25,8 @@ def ConfigSectionMap(section):
             dict1[option] = None
     return dict1
  
- 
+
+# Start telegram bot 
 def bot_start():
     global bot
     bot = telegram.Bot(telegram_settings["token"])
@@ -35,43 +36,29 @@ def bot_start():
         update_id = None
     bot_message("bot starts!")
 
-def testm(MessageText):
-    print(MessageText)
- 
-def bot_message(MessageText):
-    bot.send_message(chat_id=telegram_settings["chat_id"], text=MessageText)
+# uncomment to debug
+#def bot_message(MessageText):
+#    bot.send_message(chat_id = telegram_settings["chat_id"], text = MessageText)
  
 def bot_voice_message(VoiceMessage):
     bio = BytesIO(VoiceMessage)
     bio.name = 'voicemail.wav'
-    bot.send_voice(chat_id=telegram_settings["chat_id"], voice=bio)
- 
- 
-def connection_worker(conn,addr):
-    returndata = b''
+    bot.send_voice(chat_id = telegram_settings["chat_id"], voice = bio)
+
+# worker to recive and un-pickle data async  
+def connection_worker(conn, addr):
+    data = b''
     while True:
-        data = conn.recv(1024)
-        if not data:
+        chunk = conn.recv(1024)
+        if not chunk:
             break
-        returndata = returndata+data
-    #filename=strftime("%Y_%m_%d____%H_%M_%S", gmtime()) + '.wav'
-    #wavfile = open(filename,'wb')
-    #try to un-pickle touple, and use their elements
-    #try:
-    touple_pickled=pickle.loads(returndata)
-    #wavfile.write(touple_pickled[0])
-    #print(touple_pickled[1])
-    #print(type(touple_pickled[1]))
-    #print(type(touple_pickled[0]))
+        data += chunk
+    conn.close()
+    touple_pickled = pickle.loads(data)
     bot_message(str(touple_pickled[1]))
-    #bot_message(filename)
-    #testm(filename)
     bot_voice_message(touple_pickled[0])
-    #except:
-    #    pass
- 
- 
- 
+
+# creating workers async 
 def workers_create(sock):
     while True:
         conn,addr = sock.accept()
@@ -83,7 +70,7 @@ def workers_create(sock):
  
  
 def main():
-    #bind to socket
+#   bind to socket
     sock = socket.socket()
  
     try:
@@ -92,16 +79,16 @@ def main():
     except:
         print("cant bind to socket!")
         sys.exit(1)
-    #using dedicated thread, run worker creator
-    #bot_start(telegram_settings['token'],telegram_settings['chat_id'])
+#   using dedicated thread, run worker creator
+#   bot_start(telegram_settings['token'],telegram_settings['chat_id'])
     bot_start()
-#    bot_message("testmessage from main!")
+#   bot_message("testmessage from main!")
     worker_creator_thread = threading.Thread(target=workers_create(sock))
     worker_creator_thread.start()
  
  
  
-#use ini config to determinate Network settings
+# Use ini config to determinate Network settings for this file and for client
 config = configparser.ConfigParser()
  
 try:
@@ -115,5 +102,4 @@ except:
  
 if __name__ == "__main__":
     main()
-
 

@@ -27,17 +27,18 @@ print(10*"-")
 print(attachment.get_content_type())
 print(attachment2.get_content_type())
 
-#open('attachment.wav','wb').write(attachment.get_payload(decode=True))
-#open('attachment1.txt','wb').write(attachment2.get_payload(decode=True))
+# uncomment to debug
 
+# open('attachment.wav','wb').write(attachment.get_payload(decode=True))
+# open('attachment1.txt','wb').write(attachment2.get_payload(decode=True))
 #wavdata = binary_file.read(write(attachment.get_payload(decode=True))
+
 wavdata = attachment.get_payload(decode=True)
 
+# uncomment to debug
 #print(wavdata)
-
 #wavfile = open('att.wav','wb')
 #wavfile.write(wavdata)
-
 #mp3data = os.system(lame -V 5 
 
 data4picked = (wavdata,attachment2)
@@ -46,10 +47,6 @@ pickleddata = pickle.dumps(data4picked)
 sock = socket.socket()
 sock.connect((bot_daemon.network_settings["bind_ip"],int(bot_daemon.network_settings["bind_port"])))
 
-#sock.send(wavdata)
 sock.send(pickleddata)
 
 sock.close()
-
-
-
